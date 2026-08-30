@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚡ Interactive Pokémon Explorer (Pokédex Modern)
 
-## Getting Started
+An interactive, high-performance, and responsive Pokédex web application built with **Next.js 14+ (App Router)**, **TypeScript**, **Tailwind CSS**, and **PokeAPI**. Featuring a sleek dark glassmorphism UI, real-time search/filters, dynamic visual stats, and local favorites persistence.
 
-First, run the development server:
+![Pokédex Banner](public/og-image.png) <!-- Tambahkan screenshot / banner aplikasi Anda di sini -->
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## ✨ Key Features
+
+- **🚀 Server-Side Rendering & Fast Load:** Built using Next.js App Router for optimal performance, fast initial page loads, and SEO efficiency.
+- **🎨 Modern Dark Glassmorphism UI:** Designed with a sleek, permanent dark-mode aesthetic, dynamic element-type color coding, and subtle glow effects.
+- **📜 Real Infinite Scroll:** Smooth and automatic fetching of all 151 original Pokémon as you scroll down the page using `Intersection Observer`.
+- **📊 Dynamic Base Stats Visuals:** Animated stats progression bars (HP, Attack, Defense, Speed) with dynamic color indicators on individual detail pages.
+- **❤️ Favorites & Persistence:** Save your favorite Pokémon locally using `localStorage` with a dedicated "Favorites" filter tab.
+- **🔎 Real-Time Search & Type Filters:** Instantly search by Pokémon name or ID, and filter by 18+ elemental types with dynamic URL Query State.
+- **📱 Native-Like Mobile Navigation:** Includes a fixed bottom navigation bar on mobile devices (`block md:hidden`) for an improved user experience.
+- **🔤 Clean Custom Typography:** Styled using Next.js local fonts and custom Tailwind gradients for iconic headers.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Animations:** [Framer Motion](https://www.framer.com/motion/)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **API Source:** [PokeAPI](https://pokeapi.co/)
+- **Deployment:** [Vercel](https://vercel.com/)
+
+---
+
+## 📂 Project Structure
+
+```text
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx         # Root layout & custom font definitions
+│   │   ├── page.tsx           # Explorer Home page with Infinite Scroll
+│   │   └── pokemon/[name]/    # Dynamic route for individual Pokémon details
+│   ├── components/
+│   │   ├── ui/                # Reusable UI components (Badges, Skeletons)
+│   │   ├── PokemonCard.tsx    # Glassmorphism Pokémon card component
+│   │   ├── PokemonGrid.tsx    # Grid renderer with Infinite Scroll trigger
+│   │   ├── StatsChart.tsx     # Animated Base Stats progress visualizer
+│   │   └── BottomNav.tsx      # Mobile-first bottom navigation bar
+│   ├── lib/
+│   │   ├── pokeapi.ts         # PokeAPI fetch functions
+│   │   └── utils.ts           # Type color maps & CSS utilities
+│   └── types/
+│       └── pokemon.ts         # TypeScript interfaces for PokeAPI payloads
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
