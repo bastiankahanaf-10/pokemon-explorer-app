@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getFavoriteNames, toggleFavoriteName } from "@/lib/favorites";
@@ -31,13 +30,7 @@ export function PokemonDetailClient({
   };
 
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 16, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.28, ease: "easeOut" }}
-      style={{ willChange: "transform, opacity" }}
-      className="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 shadow-2xl shadow-slate-950/40 backdrop-blur-xl"
-    >
+    <article className="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
       <div className="flex items-center justify-end p-3 sm:p-4 md:p-6">
         <button
           type="button"
@@ -90,6 +83,6 @@ export function PokemonDetailClient({
           {children}
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }

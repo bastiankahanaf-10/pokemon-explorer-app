@@ -4,12 +4,16 @@ import { Heart, Home, X, Zap } from "lucide-react";
 import { useState } from "react";
 
 export function BottomNav({
+  activeTab,
   activeType,
+  onChangeTab,
   onChangeType,
   onToggleFavorites,
   types,
 }: {
+  activeTab: "all" | "favorites" | "type";
   activeType: string;
+  onChangeTab: (value: "all" | "favorites" | "type") => void;
   onChangeType: (value: string) => void;
   onToggleFavorites: () => void;
   types: string[];
@@ -29,15 +33,18 @@ export function BottomNav({
 
   const handleAction = (value: string) => {
     if (value === "favorites") {
+      onChangeTab("favorites");
       onToggleFavorites();
       return;
     }
 
     if (value === "filter") {
+      onChangeTab("type");
       setIsTypeSheetOpen(true);
       return;
     }
 
+    onChangeTab("all");
     onChangeType("all");
     setIsTypeSheetOpen(false);
   };
@@ -50,11 +57,9 @@ export function BottomNav({
       >
         {items.map(({ label, value, icon: Icon }) => {
           const isActive =
-            (value === "all" && activeType === "all") ||
-            (value === "favorites" && activeType === "favorites") ||
-            (value === "filter" &&
-              activeType !== "all" &&
-              activeType !== "favorites");
+            (value === "all" && activeTab === "all") ||
+            (value === "favorites" && activeTab === "favorites") ||
+            (value === "filter" && activeTab === "type");
 
           return (
             <button

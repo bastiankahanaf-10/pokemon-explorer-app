@@ -16,6 +16,9 @@ export function PokedexExplorer({
   types: string[];
 }) {
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "favorites" | "type">(
+    "all",
+  );
   const [activeType, setActiveType] = useState("all");
   const [sortBy, setSortBy] = useState("id");
   const [visibleCount, setVisibleCount] = useState(24);
@@ -37,10 +40,10 @@ export function PokedexExplorer({
       const matchesSearch =
         query.length === 0 || pokemon.name.toLowerCase().includes(query);
       const matchesFavorites =
-        activeType !== "favorites" || favorites.includes(pokemon.name);
+        activeTab !== "favorites" || favorites.includes(pokemon.name);
       const matchesType =
-        activeType === "all" ||
-        activeType === "favorites" ||
+        activeTab === "all" ||
+        activeTab === "favorites" ||
         pokemon.types.includes(activeType);
 
       return matchesSearch && matchesFavorites && matchesType;
@@ -60,10 +63,17 @@ export function PokedexExplorer({
 
       return a.id - b.id;
     });
-  }, [activeType, favorites, search, sortBy, visiblePokemons]);
+  }, [activeTab, activeType, favorites, search, sortBy, visiblePokemons]);
 
   const handleToggleFavorite = (name: string) => {
     setFavorites((current) => toggleFavoriteName(name, current));
+  };
+
+  const handleSelectTab = (nextTab: "all" | "favorites" | "type") => {
+    setActiveTab(nextTab);
+    if (nextTab !== "type") {
+      setActiveType("all");
+    }
   };
 
   const hasMore = visibleCount < initialPokemons.length;
@@ -93,7 +103,10 @@ export function PokedexExplorer({
               <TypeFilter
                 types={types}
                 activeType={activeType}
-                onChange={setActiveType}
+                onChange={(nextType) => {
+                  setActiveType(nextType);
+                  setActiveTab("type");
+                }}
               />
               <SortControl value={sortBy} onChange={setSortBy} />
             </div>
@@ -107,9 +120,9 @@ export function PokedexExplorer({
               <strong className="text-white">{filteredPokemons.length}</strong>{" "}
               Pokémon
             </span>
-            {activeType !== "all" && (
+            {activeTab !== "all" && (
               <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-cyan-100">
-                Filter: {activeType}
+                Filter: {activeTab === "favorites" ? "Favorites" : activeType}
               </span>
             )}
           </div>

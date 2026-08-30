@@ -25,6 +25,7 @@ function toTitleCase(value: string) {
 export async function getPokemonTypes(): Promise<string[]> {
   try {
     const response = await fetch(`${API_BASE}/type?limit=20`, {
+      cache: "force-cache",
       next: { revalidate: 3600 },
     });
 
@@ -55,6 +56,7 @@ export async function getPokemonByName(
 ): Promise<PokemonDetail | null> {
   try {
     const response = await fetch(`${API_BASE}/pokemon/${name.toLowerCase()}`, {
+      cache: "force-cache",
       next: { revalidate: 3600 },
     });
 
@@ -100,7 +102,8 @@ export async function fetchPokemonPage(
     const response = await fetch(
       `${API_BASE}/pokemon?limit=${limit}&offset=${offset}`,
       {
-        cache: "no-store",
+        cache: "force-cache",
+        next: { revalidate: 3600 },
       },
     );
 
