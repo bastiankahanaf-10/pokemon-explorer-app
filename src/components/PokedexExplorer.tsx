@@ -74,6 +74,9 @@ export function PokedexExplorer({
     if (nextTab !== "type") {
       setActiveType("all");
     }
+    if (nextTab === "favorites") {
+      setFavorites(getFavoriteNames());
+    }
   };
 
   const hasMore = visibleCount < initialPokemons.length;

@@ -80,8 +80,10 @@ export function PokemonPageClient({
   };
 
   const handleToggleFavorites = () => {
-    setActiveTab((current) => (current === "favorites" ? "all" : "favorites"));
-    if (activeTab !== "favorites") {
+    const nextTab = activeTab === "favorites" ? "all" : "favorites";
+    setActiveTab(nextTab);
+    setFavorites(getFavoriteNames());
+    if (nextTab !== "favorites") {
       setActiveType("all");
     }
   };

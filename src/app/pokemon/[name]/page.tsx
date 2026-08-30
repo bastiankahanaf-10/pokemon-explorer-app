@@ -36,9 +36,12 @@ export default async function PokemonDetailPage({
         <Link
           href="/"
           prefetch={true}
-          className="mb-4 inline-flex items-center rounded-full border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 transition hover:border-cyan-400/50 hover:text-white sm:mb-6"
+          className="group mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-zinc-800 hover:text-white active:scale-95 sm:mb-6"
         >
-          ← Back to Pokédex
+          <span className="inline-block transition-transform duration-300 ease-in-out group-hover:-translate-x-1">
+            ←
+          </span>
+          <span>Back to Pokédex</span>
         </Link>
 
         <PokemonDetailClient
