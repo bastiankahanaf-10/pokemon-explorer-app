@@ -69,7 +69,10 @@ export function PokedexExplorer({
   const hasMore = visibleCount < initialPokemons.length;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-4 py-10 text-white sm:px-6 lg:px-8">
+    <main
+      style={{ willChange: "transform" }}
+      className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-4 py-10 text-white sm:px-6 lg:px-8"
+    >
       <div className="mx-auto max-w-7xl">
         <header className="mb-10 flex flex-col gap-6 rounded-[2rem] border border-white/10 bg-slate-950/60 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
           <div className="flex flex-col gap-2">
