@@ -179,6 +179,7 @@ export function PokemonPageClient({
         activeType={activeType}
         onChangeType={setActiveType}
         onToggleFavorites={handleToggleFavorites}
+        types={types}
       />
     </main>
   );

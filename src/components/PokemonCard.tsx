@@ -19,7 +19,7 @@ export function PokemonCard({
     <motion.div
       whileHover={{ y: -8, scale: 1.015 }}
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
-      className="group relative"
+      className="group relative touch-manipulation"
     >
       <div className="absolute inset-0 -z-10 rounded-[1.9rem] bg-cyan-400/12 blur-2xl opacity-0 transition duration-300 group-hover:opacity-100" />
 
@@ -45,7 +45,10 @@ export function PokemonCard({
           />
         </button>
 
-        <Link href={`/pokemon/${pokemon.name}`} className="relative block">
+        <Link
+          href={`/pokemon/${pokemon.name}`}
+          className="relative block touch-manipulation active:scale-[0.99] active:bg-slate-800/80"
+        >
           <div className="absolute inset-0 rounded-[1.4rem] bg-gradient-to-br from-cyan-500/10 via-sky-500/5 to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
 
           <div className="relative flex flex-col items-center gap-3 text-center">

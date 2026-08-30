@@ -28,11 +28,11 @@ export default async function PokemonDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-4 py-10 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-3 py-5 text-white sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <Link
           href="/"
-          className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-slate-900/60 px-4 py-2 text-sm text-slate-200 transition hover:border-cyan-400/50 hover:text-white"
+          className="mb-4 inline-flex items-center rounded-full border border-white/10 bg-slate-900/60 px-3 py-2 text-sm text-slate-200 transition hover:border-cyan-400/50 hover:text-white sm:mb-6"
         >
           ← Back to Pokédex
         </Link>
@@ -43,35 +43,39 @@ export default async function PokemonDetailPage({
           id={pokemon.id}
           types={pokemon.types}
         >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:p-4">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 sm:text-xs">
                 Height
               </p>
-              <p className="mt-2 text-lg font-semibold">
+              <p className="mt-2 text-base font-semibold sm:text-lg">
                 {pokemon.height / 10} m
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:p-4">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 sm:text-xs">
                 Weight
               </p>
-              <p className="mt-2 text-lg font-semibold">
+              <p className="mt-2 text-base font-semibold sm:text-lg">
                 {pokemon.weight / 10} kg
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:p-4">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-slate-400 sm:text-xs">
                 Order
               </p>
-              <p className="mt-2 text-lg font-semibold">#{pokemon.order}</p>
+              <p className="mt-2 text-base font-semibold sm:text-lg">
+                #{pokemon.order}
+              </p>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <h2 className="mb-3 text-lg font-semibold">Abilities</h2>
-              <ul className="space-y-2 text-slate-200">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:p-4">
+              <h2 className="mb-3 text-base font-semibold sm:text-lg">
+                Abilities
+              </h2>
+              <ul className="space-y-2 text-sm text-slate-200 sm:text-base">
                 {pokemon.abilities.map((ability) => (
                   <li
                     key={ability}
@@ -83,20 +87,22 @@ export default async function PokemonDetailPage({
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <h2 className="mb-3 text-lg font-semibold">Base Stats</h2>
-              <div className="space-y-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-3 sm:p-4">
+              <h2 className="mb-3 text-base font-semibold sm:text-lg">
+                Base Stats
+              </h2>
+              <div className="space-y-2.5 sm:space-y-3">
                 {pokemon.stats.map((stat) => {
                   const percent = Math.min((stat.value / 255) * 100, 100);
                   const tone = getStatTone(stat.name);
 
                   return (
                     <div key={stat.name}>
-                      <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                      <div className="mb-1 flex items-center justify-between text-[9px] uppercase tracking-[0.18em] text-slate-400 sm:text-[10px]">
                         <span>{stat.name}</span>
                         <span>{stat.value}</span>
                       </div>
-                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-800">
+                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-800 sm:h-3">
                         <div
                           className={`h-full rounded-full bg-gradient-to-r ${tone} transition-[width] duration-500 ease-out`}
                           style={{ width: `${percent}%` }}

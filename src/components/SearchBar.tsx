@@ -19,8 +19,9 @@ export function SearchBar({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         type="text"
+        inputMode="search"
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-white/10 bg-slate-900/80 py-3 pl-11 pr-4 text-base text-white shadow-inner shadow-slate-950/40 placeholder:text-slate-400 transition focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+        className="min-h-[48px] w-full rounded-2xl border border-white/10 bg-slate-900/80 py-3 pl-11 pr-4 text-base leading-6 text-white shadow-inner shadow-slate-950/40 placeholder:text-slate-400 transition focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
       />
     </div>
   );

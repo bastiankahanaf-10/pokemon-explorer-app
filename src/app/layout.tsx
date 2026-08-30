@@ -23,6 +23,13 @@ export const metadata: Metadata = {
   description: "Modern Pokémon directory built with Next.js",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
