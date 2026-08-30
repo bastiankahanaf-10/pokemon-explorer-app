@@ -21,9 +21,9 @@ export function PokemonCard({
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
       className="group relative touch-manipulation"
     >
-      <div className="absolute inset-0 -z-10 rounded-[1.9rem] bg-cyan-400/12 blur-2xl opacity-0 transition duration-300 group-hover:opacity-100" />
+      <div className="absolute inset-0 -z-10 hidden rounded-[1.9rem] bg-cyan-400/12 opacity-0 transition duration-300 md:block md:blur-2xl md:group-hover:opacity-100" />
 
-      <div className="relative overflow-hidden rounded-[1.7rem] border border-white/10 bg-slate-900/75 p-4 shadow-[0_18px_50px_rgba(2,6,23,0.45)] ring-1 ring-white/5 backdrop-blur-sm">
+      <div className="relative overflow-hidden rounded-[1.7rem] border border-zinc-800 bg-slate-900/85 p-4 ring-1 ring-white/5 shadow-none md:border-white/10 md:bg-slate-900/75 md:shadow-[0_18px_50px_rgba(2,6,23,0.45)] md:backdrop-blur-sm">
         <button
           type="button"
           aria-label={

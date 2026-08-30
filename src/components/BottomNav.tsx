@@ -58,8 +58,11 @@ export function BottomNav({
               key={label}
               type="button"
               onClick={() => handleAction(value)}
-              onTouchStart={() => handleAction(value)}
-              className={`flex min-h-[48px] min-w-[48px] flex-1 touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-3 py-2 text-[11px] transition-all duration-150 active:scale-95 ${
+              onTouchStart={(event) => {
+                event.preventDefault();
+                handleAction(value);
+              }}
+              className={`flex min-h-[48px] min-w-[48px] flex-1 touch-manipulation flex-col items-center justify-center gap-1 rounded-full px-3 py-2 text-[11px] transition-transform duration-150 active:scale-90 active:bg-zinc-800/80 ${
                 isActive ? "bg-cyan-500/15 text-cyan-100" : "text-slate-300"
               }`}
             >
@@ -87,7 +90,11 @@ export function BottomNav({
                 type="button"
                 aria-label="Close type filter"
                 onClick={() => setIsTypeSheetOpen(false)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-slate-900 text-slate-200 active:scale-95"
+                onTouchStart={(event) => {
+                  event.preventDefault();
+                  setIsTypeSheetOpen(false);
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-slate-900 text-slate-200 transition-transform active:scale-90 active:bg-zinc-800/80"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -97,7 +104,11 @@ export function BottomNav({
               <button
                 type="button"
                 onClick={() => handleSelectType("all")}
-                className={`min-h-[48px] rounded-full border px-3 py-2 text-sm font-medium transition-all active:scale-95 ${
+                onTouchStart={(event) => {
+                  event.preventDefault();
+                  handleSelectType("all");
+                }}
+                className={`min-h-[48px] rounded-full border px-3 py-2 text-sm font-medium transition-transform active:scale-90 active:bg-zinc-800/80 ${
                   activeType === "all"
                     ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
                     : "border-white/10 bg-slate-900/80 text-slate-200"
@@ -111,7 +122,11 @@ export function BottomNav({
                   key={type}
                   type="button"
                   onClick={() => handleSelectType(type)}
-                  className={`min-h-[48px] rounded-full border px-3 py-2 text-sm font-medium capitalize transition-all active:scale-95 ${
+                  onTouchStart={(event) => {
+                    event.preventDefault();
+                    handleSelectType(type);
+                  }}
+                  className={`min-h-[48px] rounded-full border px-3 py-2 text-sm font-medium capitalize transition-transform active:scale-90 active:bg-zinc-800/80 ${
                     activeType === type
                       ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
                       : "border-white/10 bg-slate-900/80 text-slate-200"

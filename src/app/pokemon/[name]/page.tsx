@@ -28,7 +28,10 @@ export default async function PokemonDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-3 py-5 text-white sm:px-6 sm:py-10 lg:px-8">
+    <main
+      style={{ willChange: "transform, opacity" }}
+      className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-3 py-5 text-white transition-opacity duration-300 ease-out sm:px-6 sm:py-10 lg:px-8"
+    >
       <div className="mx-auto max-w-5xl">
         <Link
           href="/"
@@ -97,15 +100,21 @@ export default async function PokemonDetailPage({
                   const tone = getStatTone(stat.name);
 
                   return (
-                    <div key={stat.name}>
+                    <div
+                      key={stat.name}
+                      style={{ willChange: "transform, opacity" }}
+                    >
                       <div className="mb-1 flex items-center justify-between text-[9px] uppercase tracking-[0.18em] text-slate-400 sm:text-[10px]">
                         <span>{stat.name}</span>
                         <span>{stat.value}</span>
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-slate-800 sm:h-3">
                         <div
-                          className={`h-full rounded-full bg-gradient-to-r ${tone} transition-[width] duration-500 ease-out`}
-                          style={{ width: `${percent}%` }}
+                          className={`h-full rounded-full bg-gradient-to-r ${tone} transition-[width,transform,opacity] duration-500 ease-out`}
+                          style={{
+                            width: `${percent}%`,
+                            willChange: "transform, opacity",
+                          }}
                         />
                       </div>
                     </div>
