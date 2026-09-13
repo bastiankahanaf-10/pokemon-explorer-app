@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PokemonGrid } from "@/components/PokemonGrid";
+import { PokeBotModal } from "@/components/PokeBotModal";
 import { SearchBar } from "@/components/SearchBar";
 import { SortControl } from "@/components/SortControl";
 import { TypeFilter } from "@/components/TypeFilter";
@@ -15,6 +17,7 @@ export function PokedexExplorer({
   initialPokemons: PokemonListItem[];
   types: string[];
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "favorites" | "type">(
     "all",
@@ -69,6 +72,34 @@ export function PokedexExplorer({
     setFavorites((current) => toggleFavoriteName(name, current));
   };
 
+  const handlePokeBotAction = (action: string, payload: unknown) => {
+    const args = payload as Record<string, string | undefined>;
+
+    if (action === "filter_pokemon") {
+      if (args.type) {
+        setActiveType(args.type);
+        setActiveTab("type");
+      }
+
+      if (args.search) {
+        setSearch(args.search);
+        setActiveTab("all");
+      }
+
+      return;
+    }
+
+    if (action === "open_favorites") {
+      setActiveTab("favorites");
+      setFavorites(getFavoriteNames());
+      return;
+    }
+
+    if (action === "navigate_to_pokemon" && args.name) {
+      router.push(`/pokemon/${args.name}`);
+    }
+  };
+
   const handleSelectTab = (nextTab: "all" | "favorites" | "type") => {
     setActiveTab(nextTab);
     if (nextTab !== "type") {
@@ -103,6 +134,7 @@ export function PokedexExplorer({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <SearchBar value={search} onChange={setSearch} />
             <div className="flex flex-wrap items-center gap-2">
+              <PokeBotModal onAction={handlePokeBotAction} />
               <TypeFilter
                 types={types}
                 activeType={activeType}
