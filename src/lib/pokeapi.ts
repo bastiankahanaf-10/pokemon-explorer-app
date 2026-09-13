@@ -11,6 +11,7 @@ const fallbackPokemon: PokemonListItem[] = Array.from(
       name: `pokemon-${id}`,
       image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
       types: [index % 2 === 0 ? "grass" : "fire"],
+      baseStatTotal: 0,
     };
   },
 );
@@ -125,6 +126,7 @@ export async function fetchPokemonPage(
             name: pokemon.name,
             image: "",
             types: ["normal"],
+            baseStatTotal: 0,
           };
         }
 
@@ -133,6 +135,10 @@ export async function fetchPokemonPage(
           name: detail.name,
           image: detail.image,
           types: detail.types,
+          baseStatTotal: detail.stats.reduce(
+            (total, stat) => total + stat.value,
+            0,
+          ),
         };
       }),
     );

@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import type { PokemonListItem } from "@/types/pokemon";
 
-export function PokemonCard({
+function PokemonCardComponent({
   pokemon,
   isFavorite,
   onToggleFavorite,
@@ -88,3 +88,5 @@ export function PokemonCard({
     </motion.div>
   );
 }
+
+export const PokemonCard = memo(PokemonCardComponent);

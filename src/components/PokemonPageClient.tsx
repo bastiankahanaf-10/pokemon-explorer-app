@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { PokemonGrid, PokemonGridSkeleton } from "@/components/PokemonGrid";
+import { PokeBotModal } from "@/components/PokeBotModal";
 import { SearchBar } from "@/components/SearchBar";
 import { SortControl } from "@/components/SortControl";
 import { TypeFilter } from "@/components/TypeFilter";
@@ -16,6 +18,7 @@ export function PokemonPageClient({
   initialPokemons: PokemonListItem[];
   types: string[];
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "favorites" | "type">(
     "all",
@@ -23,13 +26,10 @@ export function PokemonPageClient({
   const [activeType, setActiveType] = useState("all");
   const [sortBy, setSortBy] = useState("id");
   const [visibleCount, setVisibleCount] = useState(24);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [botLimit, setBotLimit] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState<string[]>(getFavoriteNames);
   const [isLoading, setIsLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    setFavorites(getFavoriteNames());
-  }, []);
 
   const visiblePokemons = useMemo(
     () => initialPokemons.slice(0, visibleCount),
@@ -52,7 +52,10 @@ export function PokemonPageClient({
       return matchesSearch && matchesFavorites && matchesType;
     });
 
-    return [...filtered].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "base_stat_total") {
+        return b.baseStatTotal - a.baseStatTotal;
+      }
       if (sortBy === "name") return a.name.localeCompare(b.name);
       if (sortBy === "favorites") {
         const favoriteDelta =
@@ -62,13 +65,61 @@ export function PokemonPageClient({
       }
       return a.id - b.id;
     });
-  }, [activeTab, activeType, favorites, search, sortBy, visiblePokemons]);
+
+    return botLimit ? sorted.slice(0, botLimit) : sorted;
+  }, [
+    activeTab,
+    activeType,
+    botLimit,
+    favorites,
+    search,
+    sortBy,
+    visiblePokemons,
+  ]);
 
   const handleToggleFavorite = (name: string) => {
     setFavorites((current) => toggleFavoriteName(name, current));
   };
 
-  const handleLoadMore = () => {
+  const handlePokeBotAction = (action: string, payload: unknown) => {
+    const args = payload as Record<string, string | number | undefined>;
+
+    if (action === "filter_pokemon") {
+      setBotLimit(typeof args.limit === "number" ? args.limit : null);
+      setSortBy(typeof args.ranking === "string" ? args.ranking : "id");
+      if (args.limit) {
+        setVisibleCount(initialPokemons.length);
+      }
+      if (typeof args.type === "string" && args.type) {
+        setActiveType(args.type);
+        setActiveTab("type");
+      }
+
+      if (typeof args.search === "string" && args.search) {
+        setSearch(args.search);
+        setActiveTab("all");
+      }
+
+      if (!args.type && !args.search) {
+        setActiveType("all");
+        setActiveTab("all");
+      }
+
+      return;
+    }
+
+    if (action === "open_favorites") {
+      setActiveTab("favorites");
+      setFavorites(getFavoriteNames());
+      return;
+    }
+
+    if (action === "navigate_to_pokemon" && args.name) {
+      router.push(`/pokemon/${args.name}`);
+    }
+  };
+
+  const handleLoadMore = useCallback(() => {
     if (visibleCount >= initialPokemons.length) return;
     setIsLoading(true);
     window.setTimeout(() => {
@@ -77,7 +128,7 @@ export function PokemonPageClient({
       );
       setIsLoading(false);
     }, 350);
-  };
+  }, [initialPokemons.length, visibleCount]);
 
   const handleToggleFavorites = () => {
     const nextTab = activeTab === "favorites" ? "all" : "favorites";
@@ -86,6 +137,8 @@ export function PokemonPageClient({
     if (nextTab !== "favorites") {
       setActiveType("all");
     }
+    setBotLimit(null);
+    setSortBy("id");
   };
 
   useEffect(() => {
@@ -105,7 +158,7 @@ export function PokemonPageClient({
     observer.observe(sentinel);
 
     return () => observer.disconnect();
-  }, [initialPokemons.length, isLoading, visibleCount]);
+  }, [handleLoadMore, initialPokemons.length, isLoading, visibleCount]);
 
   const hasMore = visibleCount < initialPokemons.length;
 
@@ -134,6 +187,7 @@ export function PokemonPageClient({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <SearchBar value={search} onChange={setSearch} />
             <div className="flex flex-wrap items-center gap-2">
+              <PokeBotModal onAction={handlePokeBotAction} />
               <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
                 <TypeFilter
                   types={types}

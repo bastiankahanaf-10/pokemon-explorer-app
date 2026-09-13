@@ -19,10 +19,10 @@
 }
 
 html {
-  scroll-behavior: smooth;
   background: var(--background);
   color: var(--foreground);
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
 body {
@@ -31,10 +31,45 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  overscroll-behavior-y: auto;
+  overscroll-behavior-x: none;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
   -webkit-font-smoothing: antialiased;
+}
+
+.grid-scroll-shell {
+  max-height: min(74vh, 760px);
+  height: min(74vh, 760px);
+  min-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(34, 211, 238, 0.65) transparent;
+}
+
+.grid-scroll-shell::-webkit-scrollbar {
+  width: 8px;
+}
+
+.grid-scroll-shell::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.6);
+  border-radius: 999px;
+}
+
+.grid-scroll-shell::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pokemon-grid {
+  contain: content;
+  transform: translateZ(0);
+  will-change: scroll-position;
 }
 
 button,

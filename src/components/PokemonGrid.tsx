@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { PokemonCard } from "@/components/PokemonCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { PokemonListItem } from "@/types/pokemon";
@@ -23,22 +23,15 @@ export function PokemonGrid({
   }
 
   return (
-    <motion.div
-      layout
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.35 }}
-    >
-      <AnimatePresence>
+    <div className="grid-scroll-shell overscroll-contain touch-pan-y">
+      <div className="pokemon-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {pokemons.map((pokemon) => (
           <motion.div
             key={pokemon.id}
-            layout
             initial={{ opacity: 0, scale: 0.92, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 8 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
+            className="min-w-0"
           >
             <PokemonCard
               pokemon={pokemon}
@@ -47,8 +40,8 @@ export function PokemonGrid({
             />
           </motion.div>
         ))}
-      </AnimatePresence>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { PokemonGrid } from "@/components/PokemonGrid";
+import { PokeBotModal } from "@/components/PokeBotModal";
 import { SearchBar } from "@/components/SearchBar";
 import { SortControl } from "@/components/SortControl";
 import { TypeFilter } from "@/components/TypeFilter";
@@ -15,6 +17,7 @@ export function PokedexExplorer({
   initialPokemons: PokemonListItem[];
   types: string[];
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "favorites" | "type">(
     "all",
@@ -22,11 +25,8 @@ export function PokedexExplorer({
   const [activeType, setActiveType] = useState("all");
   const [sortBy, setSortBy] = useState("id");
   const [visibleCount, setVisibleCount] = useState(24);
-  const [favorites, setFavorites] = useState<string[]>([]);
-
-  useEffect(() => {
-    setFavorites(getFavoriteNames());
-  }, []);
+  const [botLimit, setBotLimit] = useState<number | null>(null);
+  const [favorites, setFavorites] = useState<string[]>(getFavoriteNames);
 
   const visiblePokemons = useMemo(
     () => initialPokemons.slice(0, visibleCount),
@@ -49,7 +49,10 @@ export function PokedexExplorer({
       return matchesSearch && matchesFavorites && matchesType;
     });
 
-    return [...filtered].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "base_stat_total") {
+        return b.baseStatTotal - a.baseStatTotal;
+      }
       if (sortBy === "name") {
         return a.name.localeCompare(b.name);
       }
@@ -63,19 +66,57 @@ export function PokedexExplorer({
 
       return a.id - b.id;
     });
-  }, [activeTab, activeType, favorites, search, sortBy, visiblePokemons]);
+
+    return botLimit ? sorted.slice(0, botLimit) : sorted;
+  }, [
+    activeTab,
+    activeType,
+    botLimit,
+    favorites,
+    search,
+    sortBy,
+    visiblePokemons,
+  ]);
 
   const handleToggleFavorite = (name: string) => {
     setFavorites((current) => toggleFavoriteName(name, current));
   };
 
-  const handleSelectTab = (nextTab: "all" | "favorites" | "type") => {
-    setActiveTab(nextTab);
-    if (nextTab !== "type") {
-      setActiveType("all");
+  const handlePokeBotAction = (action: string, payload: unknown) => {
+    const args = payload as Record<string, string | number | undefined>;
+
+    if (action === "filter_pokemon") {
+      setBotLimit(typeof args.limit === "number" ? args.limit : null);
+      setSortBy(typeof args.ranking === "string" ? args.ranking : "id");
+      if (args.limit) {
+        setVisibleCount(initialPokemons.length);
+      }
+      if (typeof args.type === "string" && args.type) {
+        setActiveType(args.type);
+        setActiveTab("type");
+      }
+
+      if (typeof args.search === "string" && args.search) {
+        setSearch(args.search);
+        setActiveTab("all");
+      }
+
+      if (!args.type && !args.search) {
+        setActiveType("all");
+        setActiveTab("all");
+      }
+
+      return;
     }
-    if (nextTab === "favorites") {
+
+    if (action === "open_favorites") {
+      setActiveTab("favorites");
       setFavorites(getFavoriteNames());
+      return;
+    }
+
+    if (action === "navigate_to_pokemon" && args.name) {
+      router.push(`/pokemon/${args.name}`);
     }
   };
 
@@ -103,6 +144,7 @@ export function PokedexExplorer({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <SearchBar value={search} onChange={setSearch} />
             <div className="flex flex-wrap items-center gap-2">
+              <PokeBotModal onAction={handlePokeBotAction} />
               <TypeFilter
                 types={types}
                 activeType={activeType}

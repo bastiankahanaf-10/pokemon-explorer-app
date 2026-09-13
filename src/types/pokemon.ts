@@ -44,4 +44,5 @@ export interface PokemonListItem {
   name: string;
   image: string;
   types: string[];
+  baseStatTotal: number;
 }
