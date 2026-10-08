@@ -7,7 +7,7 @@ import { PokeBotModal } from "@/components/PokeBotModal";
 import { SearchBar } from "@/components/SearchBar";
 import { SortControl } from "@/components/SortControl";
 import { TypeFilter } from "@/components/TypeFilter";
-import { getFavoriteNames, toggleFavoriteName } from "@/lib/favorites";
+import { toggleFavoriteName, useFavoriteNames } from "@/lib/favorites";
 import type { PokemonListItem } from "@/types/pokemon";
 
 export function PokedexExplorer({
@@ -26,7 +26,7 @@ export function PokedexExplorer({
   const [sortBy, setSortBy] = useState("id");
   const [visibleCount, setVisibleCount] = useState(24);
   const [botLimit, setBotLimit] = useState<number | null>(null);
-  const [favorites, setFavorites] = useState<string[]>(getFavoriteNames);
+  const favorites = useFavoriteNames();
 
   const visiblePokemons = useMemo(
     () => initialPokemons.slice(0, visibleCount),
@@ -79,7 +79,7 @@ export function PokedexExplorer({
   ]);
 
   const handleToggleFavorite = (name: string) => {
-    setFavorites((current) => toggleFavoriteName(name, current));
+    toggleFavoriteName(name, favorites);
   };
 
   const handlePokeBotAction = (action: string, payload: unknown) => {
@@ -111,7 +111,6 @@ export function PokedexExplorer({
 
     if (action === "open_favorites") {
       setActiveTab("favorites");
-      setFavorites(getFavoriteNames());
       return;
     }
 
@@ -144,7 +143,10 @@ export function PokedexExplorer({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <SearchBar value={search} onChange={setSearch} />
             <div className="flex flex-wrap items-center gap-2">
-              <PokeBotModal onAction={handlePokeBotAction} />
+              <PokeBotModal
+                onAction={handlePokeBotAction}
+                favoriteNames={favorites}
+              />
               <TypeFilter
                 types={types}
                 activeType={activeType}

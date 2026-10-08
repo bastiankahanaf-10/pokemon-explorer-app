@@ -1,8 +1,8 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { useEffect, useState } from "react";
-import { getFavoriteNames, toggleFavoriteName } from "@/lib/favorites";
+import Image from "next/image";
+import { toggleFavoriteName, useFavoriteNames } from "@/lib/favorites";
 
 export function PokemonDetailClient({
   name,
@@ -17,16 +17,12 @@ export function PokemonDetailClient({
   types: string[];
   children: React.ReactNode;
 }) {
-  const [favorites, setFavorites] = useState<string[]>([]);
-
-  useEffect(() => {
-    setFavorites(getFavoriteNames());
-  }, []);
+  const favorites = useFavoriteNames();
 
   const isFavorite = favorites.includes(name);
 
   const handleToggleFavorite = () => {
-    setFavorites((current) => toggleFavoriteName(name, current));
+    toggleFavoriteName(name, favorites);
   };
 
   return (
@@ -48,9 +44,12 @@ export function PokemonDetailClient({
 
       <div className="grid gap-5 p-4 pt-0 sm:p-5 md:grid-cols-2 md:gap-8 md:p-10 md:pt-0">
         <div className="flex items-center justify-center rounded-[1.5rem] bg-gradient-to-br from-slate-800 via-slate-900 to-cyan-950/50 p-4 sm:p-6">
-          <img
+          <Image
             src={image}
             alt={name}
+            width={288}
+            height={288}
+            unoptimized
             className="h-52 w-52 object-contain drop-shadow-[0_20px_40px_rgba(34,211,238,0.35)] sm:h-64 sm:w-64 md:h-72 md:w-72"
           />
         </div>

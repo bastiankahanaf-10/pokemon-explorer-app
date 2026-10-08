@@ -42,13 +42,7 @@ body {
 }
 
 .grid-scroll-shell {
-  max-height: min(74vh, 760px);
-  height: min(74vh, 760px);
-  min-height: 420px;
-  overflow-y: auto;
   overflow-x: hidden;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(34, 211, 238, 0.65) transparent;
 }

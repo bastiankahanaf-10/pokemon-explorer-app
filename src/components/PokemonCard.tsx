@@ -1,11 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { memo, useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/Badge";
 import type { PokemonListItem } from "@/types/pokemon";
+
+function subscribeToHoverChanges(callback: () => void) {
+  const mediaQuery = window.matchMedia("(hover: hover)");
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getCanHoverSnapshot() {
+  return window.matchMedia("(hover: hover)").matches;
+}
+
+function getServerCanHoverSnapshot() {
+  return false;
+}
 
 function PokemonCardComponent({
   pokemon,
@@ -16,11 +31,11 @@ function PokemonCardComponent({
   isFavorite: boolean;
   onToggleFavorite: (name: string) => void;
 }) {
-  const [canHover, setCanHover] = useState(false);
-
-  useEffect(() => {
-    setCanHover(window.matchMedia("(hover: hover)").matches);
-  }, []);
+  const canHover = useSyncExternalStore(
+    subscribeToHoverChanges,
+    getCanHoverSnapshot,
+    getServerCanHoverSnapshot,
+  );
 
   return (
     <motion.div
@@ -61,9 +76,12 @@ function PokemonCardComponent({
 
           <div className="relative flex flex-col items-center gap-3 text-center">
             <div className="mt-2 flex h-32 w-32 items-center justify-center rounded-full border border-cyan-400/10 bg-[radial-gradient(circle_at_30%_30%,rgba(34,211,238,0.2),rgba(15,23,42,0.75)_55%)] shadow-[inset_0_0_30px_rgba(34,211,238,0.12)]">
-              <img
+              <Image
                 src={pokemon.image}
                 alt={pokemon.name}
+                width={112}
+                height={112}
+                unoptimized
                 className="h-28 w-28 object-contain drop-shadow-[0_14px_22px_rgba(34,211,238,0.28)]"
               />
             </div>

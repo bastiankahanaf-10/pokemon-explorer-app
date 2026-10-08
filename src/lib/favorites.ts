@@ -1,16 +1,58 @@
-export const FAVORITES_KEY = "pokemon-app-favorites";
+import { useSyncExternalStore } from "react";
 
-export function getFavoriteNames(): string[] {
+export const FAVORITES_KEY = "pokemon-app-favorites";
+const SERVER_FAVORITES: string[] = [];
+
+let cachedRaw: string | null | undefined;
+let cachedFavorites: string[] = SERVER_FAVORITES;
+const listeners = new Set<() => void>();
+
+function getFavoritesSnapshot(): string[] {
   if (typeof window === "undefined") {
-    return [];
+    return SERVER_FAVORITES;
   }
 
   try {
     const raw = window.localStorage.getItem(FAVORITES_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
+    if (raw !== cachedRaw) {
+      cachedRaw = raw;
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      cachedFavorites = Array.isArray(parsed)
+        ? parsed.filter((name): name is string => typeof name === "string")
+        : [];
+    }
   } catch {
-    return [];
+    cachedRaw = undefined;
+    cachedFavorites = SERVER_FAVORITES;
   }
+
+  return cachedFavorites;
+}
+
+function subscribeToFavorites(listener: () => void) {
+  listeners.add(listener);
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", listener);
+  }
+
+  return () => {
+    listeners.delete(listener);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", listener);
+    }
+  };
+}
+
+export function useFavoriteNames(): string[] {
+  return useSyncExternalStore(
+    subscribeToFavorites,
+    getFavoritesSnapshot,
+    () => SERVER_FAVORITES,
+  );
+}
+
+export function getFavoriteNames(): string[] {
+  return getFavoritesSnapshot();
 }
 
 export function saveFavoriteNames(names: string[]) {
@@ -18,7 +60,11 @@ export function saveFavoriteNames(names: string[]) {
     return;
   }
 
-  window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(names));
+  const raw = JSON.stringify(names);
+  window.localStorage.setItem(FAVORITES_KEY, raw);
+  cachedRaw = raw;
+  cachedFavorites = names;
+  listeners.forEach((listener) => listener());
 }
 
 export function toggleFavoriteName(name: string, current: string[]) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Send, X } from "lucide-react";
+import { Bot, LoaderCircle, Send, X } from "lucide-react";
 import { useState } from "react";
 
 const KNOWN_TYPES = new Set([
@@ -71,6 +71,14 @@ function normalizePayloadForAction(action: string, payload: unknown) {
     return {};
   }
 
+  if (action === "navigate_to_generation") {
+    const generationValue = Number(args.generation);
+    if (!Number.isInteger(generationValue) || generationValue < 1 || generationValue > 9) {
+      return null;
+    }
+    return { generation: generationValue };
+  }
+
   if (action === "navigate_to_pokemon") {
     const nameValue =
       typeof args.name === "string" ? args.name.trim().toLowerCase() : "";
@@ -127,8 +135,10 @@ function normalizeResponseCard(payload: unknown): ResponseCard | null {
 
 export function PokeBotModal({
   onAction,
+  favoriteNames = [],
 }: {
   onAction?: (action: string, payload: unknown) => void;
+  favoriteNames?: string[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -139,7 +149,7 @@ export function PokeBotModal({
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
-    if (!message.trim()) {
+    if (!message.trim() || loading) {
       return;
     }
 
@@ -155,7 +165,7 @@ export function PokeBotModal({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, favoriteNames }),
       });
 
       const data = (await response.json()) as {
@@ -191,7 +201,7 @@ export function PokeBotModal({
         }
       }
     } catch {
-      setAnswer("PokéBot is currently unavailable.");
+      setAnswer("PokeBot is currently unavailable.");
       setResponseAction(null);
       setResponseType("text");
       setResponseCard(null);
@@ -206,10 +216,11 @@ export function PokeBotModal({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100 transition-all duration-300 ease-in-out hover:scale-105 hover:bg-cyan-400/20 active:scale-95"
+        aria-label="Open PokeBot assistant"
+        className="fixed bottom-24 right-4 z-[70] inline-flex items-center gap-2 rounded-full border border-cyan-300/50 bg-cyan-500 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-950 shadow-[0_12px_36px_rgba(34,211,238,0.3)] transition-all duration-200 hover:-translate-y-1 hover:bg-cyan-300 active:scale-95 md:bottom-6 md:right-6"
       >
-        <Bot className="h-4 w-4" />
-        PokéBot
+        <Bot className="h-5 w-5" />
+        PokeBot
       </button>
 
       <AnimatePresence>
@@ -225,7 +236,7 @@ export function PokeBotModal({
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 30, opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
-              className="w-full max-w-lg rounded-[2rem] border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-slate-950/60"
+              className="max-h-[calc(100dvh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-[2rem] border border-white/10 bg-slate-950/95 p-4 shadow-2xl shadow-slate-950/60"
             >
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -234,7 +245,7 @@ export function PokeBotModal({
                   </span>
                   <div>
                     <p className="text-xs uppercase tracking-[0.3em] text-cyan-300">
-                      PokéBot
+                      PokeBot
                     </p>
                     <h3 className="text-lg font-bold text-white">
                       Pokédex Assistant
@@ -244,7 +255,7 @@ export function PokeBotModal({
 
                 <button
                   type="button"
-                  aria-label="Close PokéBot"
+                  aria-label="Close PokeBot"
                   onClick={() => setIsOpen(false)}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-slate-900 text-slate-200 transition-all duration-150 active:scale-95"
                 >
@@ -264,7 +275,7 @@ export function PokeBotModal({
                   )}
 
                   {responseType === "card" && responseCard ? (
-                    <div className="mb-2 overflow-hidden rounded-2xl border border-cyan-400/30 bg-slate-950/80">
+                    <div className="mb-2 max-h-56 overflow-y-auto rounded-2xl border border-cyan-400/30 bg-slate-950/80">
                       <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
                         <span className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200">
                           {responseCard.title || "Pokédex Result"}
@@ -300,8 +311,28 @@ export function PokeBotModal({
                     </div>
                   ) : null}
 
-                  <div className="max-h-44 min-h-24 overflow-y-auto rounded-xl border border-white/5 bg-slate-950/50 p-3 text-sm leading-6 text-slate-200 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-cyan-500/50">
-                    {answer ||
+                  <div
+                    aria-live="polite"
+                    aria-busy={loading}
+                    className="max-h-44 min-h-24 overflow-y-auto rounded-xl border border-white/5 bg-slate-950/50 p-3 text-sm leading-6 text-slate-200 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-cyan-500/50"
+                  >
+                    {loading ? (
+                      <div
+                        role="status"
+                        className="flex h-full min-h-16 items-center gap-3 text-cyan-100"
+                      >
+                        <LoaderCircle className="h-5 w-5 animate-spin text-cyan-300" />
+                        <span>PokeBot is thinking</span>
+                        <span
+                          className="flex items-center gap-1"
+                          aria-hidden="true"
+                        >
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-300 [animation-delay:-0.3s]" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-300 [animation-delay:-0.15s]" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-300" />
+                        </span>
+                      </div>
+                    ) : answer ||
                       "Ask me to filter, search, open favorites, or jump to a Pokémon."}
                   </div>
                 </div>
@@ -316,17 +347,23 @@ export function PokeBotModal({
                         handleSend();
                       }
                     }}
+                    disabled={loading}
                     className="min-h-[48px] flex-1 rounded-2xl border border-zinc-800 bg-slate-900 px-4 text-sm text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
-                    placeholder="Ask PokéBot..."
+                    placeholder="Ask PokeBot..."
                   />
 
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={loading}
-                    className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-2xl border border-cyan-400/40 bg-cyan-400/15 px-4 text-cyan-100 transition-all duration-150 active:scale-95"
+                    aria-label={loading ? "PokeBot is responding" : "Send message"}
+                    disabled={loading || !message.trim()}
+                    className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-2xl border border-cyan-400/40 bg-cyan-400/15 px-4 text-cyan-100 transition-all duration-150 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Send className="h-4 w-4" />
+                    {loading ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>

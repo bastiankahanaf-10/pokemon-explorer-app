@@ -5,6 +5,7 @@ import type {
 } from "openai/resources/chat/completions";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { getGenerationById } from "@/lib/pokeapi";
 
 const KNOWN_TYPES = new Set([
   "bug",
@@ -52,9 +53,27 @@ const tools: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "navigate_to_generation",
+      description:
+        "Use this tool when the user explicitly asks to open, view, browse, or go to a specific Pokémon generation page. The app supports generations 1 through 9. Do not use this for a factual question about a generation unless the user asks to change the page.",
+      parameters: {
+        type: "object",
+        properties: {
+          generation: {
+            type: "integer",
+            description: "Generation ID from 1 to 9.",
+          },
+        },
+        required: ["generation"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "filter_pokemon",
       description:
-        "Use this tool only when the user clearly asks to change the visible Pokédex list by type, text search, or a global Kanto ranking. It must be used for UI filtering actions only. For phrases such as 'top 3 electric', 'three strongest fire Pokémon', or '3 Pokémon teratas', always include limit: 3 and ranking: base_stat_total so the UI shows only the requested count ranked by BST. For phrases such as '3 Pokémon terkuat Gen 1', 'top 3 Kanto Pokémon', or 'strongest Gen 1 Pokémon', omit type and search, include limit: 3, and set ranking: base_stat_total so the ranking covers all 151 Kanto Pokémon. When the user mentions Indonesian type words like 'api' (fire), 'air' (water), 'rumput' (grass), or 'listrik' (electric), translate them to the official English type names fire, water, grass, electric before constructing the args. This tool never answers trivia or statistics.",
+        "Use this tool only when the user clearly asks to change the visible home Pokédex list by type, text search, or ranking. It is for UI filtering only. For UI requests such as 'top 3 electric', include limit: 3 and ranking: base_stat_total. The home list includes Pokémon from generations I through IX and loads in pages; do not claim a global all-generation ranking when only currently loaded entries are available. For a request to browse one generation, use navigate_to_generation instead. Map Indonesian type words api, air, rumput, and listrik to fire, water, grass, and electric. This tool does not answer trivia or statistics.",
       parameters: {
         type: "object",
         properties: {
@@ -89,7 +108,7 @@ const tools: ChatCompletionTool[] = [
     function: {
       name: "open_favorites",
       description:
-        "Use this tool only when the user explicitly asks to open the Favorites tab or switch to favorite Pokémon. It should only update the UI tab state, and never answer general Pokémon questions.",
+        "Use this tool when the user asks to show, open, or view their saved favorites list in the app. It only switches the UI to the Favorites tab; for a question asking which Pokémon are saved, answer from the supplied favorites context.",
       parameters: {
         type: "object",
         properties: {},
@@ -102,7 +121,7 @@ const tools: ChatCompletionTool[] = [
     function: {
       name: "navigate_to_pokemon",
       description:
-        "Use this tool only when the user clearly asks to jump to a specific Pokémon detail page by name. The argument must be a single valid Pokémon name from Generasi 1 Kanto, ideally normalized to lowercase and safe alphanumeric-hyphenated text.",
+        "Use this tool only when the user clearly asks to jump to a specific Pokémon detail page by name. The argument can be a valid Pokémon name from generations I through IX, normalized to lowercase and safe alphanumeric-hyphenated text.",
       parameters: {
         type: "object",
         properties: {
@@ -225,6 +244,26 @@ function validateToolArgs(action: string, args: Record<string, unknown>) {
     };
   }
 
+  if (action === "navigate_to_generation") {
+    const generationValue =
+      typeof args.generation === "number" && Number.isInteger(args.generation)
+        ? args.generation
+        : Number(args.generation);
+
+    if (!Number.isInteger(generationValue) || generationValue < 1 || generationValue > 9) {
+      return {
+        ok: false,
+        args: {},
+        reason: "Please choose a Pokémon generation from 1 to 9.",
+      };
+    }
+
+    return {
+      ok: true,
+      args: { generation: generationValue } as Record<string, unknown>,
+    };
+  }
+
   if (action === "open_favorites") {
     return { ok: true, args: {} as Record<string, unknown> };
   }
@@ -264,6 +303,9 @@ function sanitizeCleanText(text: string) {
 
 function buildDeterministicRankingAction(message: string) {
   const normalized = sanitizeCleanText(message).toLowerCase();
+  if (/\b(gen(?:eration)?\s*(?:[2-9]|ii|iii|iv|v|vi|vii|viii|ix)|johto|hoenn|sinnoh|unova|kalos|alola|galar|hisui|paldea)\b/i.test(normalized)) {
+    return null;
+  }
   if (!/pokemon|pokémon|pokédex/.test(normalized)) {
     return null;
   }
@@ -338,10 +380,10 @@ function buildDeterministicRankingAction(message: string) {
     },
     text: selectedType
       ? `Menampilkan ${limit} Pokémon ${selectedType} terkuat berdasarkan total stat dasar.`
-      : `Menampilkan ${limit} Pokémon Gen 1 terkuat berdasarkan total stat dasar.`,
+      : `Menampilkan ${limit} Pokémon terkuat dari daftar yang sedang dimuat berdasarkan total stat dasar.`,
     reply: selectedType
       ? `Menampilkan ${limit} Pokémon ${selectedType} terkuat berdasarkan total stat dasar.`
-      : `Menampilkan ${limit} Pokémon Gen 1 terkuat berdasarkan total stat dasar.`,
+      : `Menampilkan ${limit} Pokémon terkuat dari daftar yang sedang dimuat berdasarkan total stat dasar.`,
   });
 }
 
@@ -358,8 +400,8 @@ function buildUiCardResponseFromPrompt(message: string, replyText: string) {
   }
 
   const rows = [
-    { label: "Kanto Types", value: "Normal • Fire • Water • Electric" },
-    { label: "Top BST", value: "Mewtwo 680 • Dragonite 600 • Moltres 580" },
+    { label: "Coverage", value: "Generations I–IX, Kanto to Paldea" },
+    { label: "Explore", value: "Search, types, favorites, and generation pages" },
     { label: "Notes", value: sanitizeCleanText(replyText) },
   ];
 
@@ -380,7 +422,7 @@ function buildUiCardResponseFromPrompt(message: string, replyText: string) {
 
 function makeNaturalFallbackResponse(message: string, reason?: string) {
   const cleanReason = reason ? ` ${reason}` : "";
-  const fallbackText = `Saya dapat menjawab pertanyaan umum tentang Pokédex Kanto secara natural. Untuk pertanyaan seperti trivia, statistik, jumlah Pokémon, strategi bertarung, atau percakapan umum, saya akan menjawab dengan teks biasa tanpa menyentuh tool UI.${cleanReason} Pertanyaan Anda: ${message}`;
+  const fallbackText = `Saya dapat menjawab pertanyaan umum tentang Pokédex Pokémon dari generation 1 sampai 9 secara natural. Untuk trivia, statistik, jumlah Pokémon, strategi bertarung, atau percakapan umum, saya akan menjawab dengan teks biasa tanpa menyentuh tool UI.${cleanReason} Pertanyaan Anda: ${message}`;
 
   return NextResponse.json(
     {
@@ -397,6 +439,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
       message?: string;
+      favoriteNames?: unknown;
     };
 
     if (!openrouter) {
@@ -404,28 +447,62 @@ export async function POST(request: NextRequest) {
         {
           action: "chat",
           args: {},
-          text: "I am unable to reach the Pokédex assistant right now. Please add a valid OPENROUTER_API_KEY in the .env.local file for this project.",
+          text: "PokeBot can't connect right now. Please add a valid OPENROUTER_API_KEY in the .env.local file for this project.",
           reply:
-            "I am unable to reach the Pokédex assistant right now. Please add a valid OPENROUTER_API_KEY in the .env.local file for this project.",
+            "PokeBot can't connect right now. Please add a valid OPENROUTER_API_KEY in the .env.local file for this project.",
         },
         { status: 200 },
       );
     }
 
     const message = body.message || "Show me the Pokédex";
+    const favoriteNames = Array.isArray(body.favoriteNames)
+      ? [...new Set(
+          body.favoriteNames
+            .filter((name): name is string => typeof name === "string")
+            .map((name) => name.trim().toLowerCase())
+            .filter((name) => /^[a-z0-9-]{1,40}$/.test(name)),
+        )].slice(0, 1025)
+      : [];
+    const favoritesContext = favoriteNames.length
+      ? `The user's current saved favorites are: ${favoriteNames.join(", ")}.`
+      : "The user currently has no Pokémon saved in favorites.";
 
     const deterministicRanking = buildDeterministicRankingAction(message);
     if (deterministicRanking) {
       return deterministicRanking;
     }
 
+    const generationCatalog = await Promise.all(
+      Array.from({ length: 9 }, (_, index) =>
+        getGenerationById(index + 1).catch(() => null),
+      ),
+    );
+    const generationContext = generationCatalog
+      .map((generation, index) =>
+        generation
+          ? `Generation ${index + 1}: ${generation.main_region.name} region, ${generation.pokemon_species.length} species`
+          : `Generation ${index + 1}: unavailable`,
+      )
+      .join("; ");
+
+    const systemPrompt = [
+      "You are PokeBot, the in-app assistant for Pokédex Explorer. Always spell the assistant name exactly PokeBot, without accents or alternate spellings.",
+      "The app explores Pokémon species from Generations I through IX (Kanto to Paldea), sourced from PokéAPI. Help users with concise answers about Pokémon, generations, types, base stats, abilities, matchups, and the app's search, filters, sorting, favorites, generation pages, and detail pages. Never describe the app as limited to Kanto or 151 Pokémon. For generation-specific rankings, do not trigger a home-list filter that cannot select one generation; answer the question naturally or open the requested generation page if the user asks to browse it.",
+      "Match the language used by the user, including Indonesian or English. Keep a friendly, clear, knowledgeable tone that fits a Pokémon companion. For unrelated requests, briefly explain that you specialize in this Pokédex and offer a relevant way to help.",
+      "Current generation catalog from PokéAPI: " + generationContext + ".",
+      "Only use UI tools when the user clearly asks to change the app. Available actions are filter_pokemon, open_favorites, navigate_to_pokemon, and navigate_to_generation. Use open_favorites when the user asks to show, open, or view their favorites list. For questions about which Pokémon are favorited, use the supplied current favorites context and never guess or claim favorites that are not listed. For explicit requests to open, view, browse, or go to a specific generation, call navigate_to_generation with its ID from 1 to 9. Never claim that a UI action happened unless its tool call is valid.",
+      favoritesContext,
+      "When Indonesian type words appear in a UI request, map api, air, rumput, and listrik to fire, water, grass, and electric. Pokémon names may come from any generation I through IX. Do not invent tools or claim access to favorites or app state that is not provided.",
+      "For ordinary replies, use plain text with short readable paragraphs or bullets. Do not use HTML or Markdown tables.",
+    ].join(" ");
+
     const completionPayload = {
       model: process.env.OPENROUTER_MODEL || "openrouter/free",
       messages: [
         {
           role: "system",
-          content:
-            "You are PokéBot, a friendly Pokédex assistant for the Kanto Generation 1 experience. The app has exactly 151 Kanto Pokémon in the dataset, and you may answer all kinds of user questions in an open and natural way. You are not limited to a developer-only route. You can answer trivia, counts, statistics, Pokémon facts, battle strategy, comparison, names, greeting, casual conversation, recommendations, and general user intents in plain text, but you should only use tool calling when the user clearly asks to change the visible app UI through a supported Pokédex action. The UI tool actions are limited to filter_pokemon, open_favorites, and navigate_to_pokemon. When a UI filter request contains top N, first N, strongest N, highest BST, or teratas N, call filter_pokemon with limit set to N and ranking set to base_stat_total; never omit the limit and never return the entire type list for a top-N request. For a global request such as '3 Pokémon terkuat Gen 1', 'top 3 Kanto Pokémon', or 'strongest Gen 1 Pokémon', call filter_pokemon with type omitted, search omitted, limit set to the requested number, and ranking set to base_stat_total. Do not answer that UI request with ordinary text only. When a user asks in Indonesian and mentions type words such as api, air, rumput, or listrik, map them to the official English Pokémon type names fire, water, grass, and electric before any tool call. Never invent extra tools or create fake UI actions. If the user request is not a UI action, answer naturally as ordinary text and do not call a function. For UI actions, produce tool arguments only when they are safe, valid, and grounded in the known Kanto Pokémon names and allowed type names. Answer in clean plain text only. Do not use HTML tags, <br>, table markup, Markdown tables, or decorative HTML from the answer. Use readable natural sentences and short clean bullet lines if needed, but no raw HTML markup.",
+          content: systemPrompt,
         },
         {
           role: "user",
@@ -448,8 +525,8 @@ export async function POST(request: NextRequest) {
         {
           action: "chat",
           args: {},
-          text: "I am unable to reach the Pokédex assistant right now.",
-          reply: "I am unable to reach the Pokédex assistant right now.",
+          text: "PokeBot couldn't get a response right now. Please try again.",
+          reply: "PokeBot couldn't get a response right now. Please try again.",
         },
         { status: 200 },
       );
@@ -488,11 +565,16 @@ export async function POST(request: NextRequest) {
       }
 
       let navigateName = "";
+      let navigateGeneration: number | null = null;
       if (action === "navigate_to_pokemon") {
         const namePayload = validation.args as { name?: string };
         if (typeof namePayload.name === "string") {
           navigateName = namePayload.name;
         }
+      }
+      if (action === "navigate_to_generation") {
+        const generationPayload = validation.args as { generation?: number };
+        navigateGeneration = generationPayload.generation ?? null;
       }
 
       const confirmationMap: Record<string, string> = {
@@ -500,6 +582,7 @@ export async function POST(request: NextRequest) {
           "I will update the Pokédex with the requested filter and ranking.",
         open_favorites: "I will switch the Pokédex list to the favorites tab.",
         navigate_to_pokemon: `I will open the Pokémon detail page for ${navigateName || "that Pokémon"}.`,
+        navigate_to_generation: `I will open Generation ${navigateGeneration ?? "requested"}.`,
       };
 
       return NextResponse.json({
@@ -540,9 +623,9 @@ export async function POST(request: NextRequest) {
         {
           action: "chat",
           args: {},
-          text: "I am unable to reach the Pokédex assistant right now. Please check that OPENROUTER_API_KEY is a valid OpenRouter key in the project environment.",
+          text: "PokeBot can't connect right now. Please check that OPENROUTER_API_KEY is a valid OpenRouter key in the project environment.",
           reply:
-            "I am unable to reach the Pokédex assistant right now. Please check that OPENROUTER_API_KEY is a valid OpenRouter key in the project environment.",
+            "PokeBot can't connect right now. Please check that OPENROUTER_API_KEY is a valid OpenRouter key in the project environment.",
         },
         { status: 200 },
       );
@@ -552,8 +635,8 @@ export async function POST(request: NextRequest) {
       {
         action: "chat",
         args: {},
-        text: "I am unable to reach the Pokédex assistant right now.",
-        reply: "I am unable to reach the Pokédex assistant right now.",
+        text: "PokeBot couldn't get a response right now. Please try again.",
+        reply: "PokeBot couldn't get a response right now. Please try again.",
       },
       { status: 200 },
     );

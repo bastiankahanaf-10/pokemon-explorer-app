@@ -1,4 +1,8 @@
-import type { PokemonDetail, PokemonListItem } from "@/types/pokemon";
+import type {
+  PokemonDetail,
+  PokemonGeneration,
+  PokemonListItem,
+} from "@/types/pokemon";
 
 const API_BASE = "https://pokeapi.co/api/v2";
 
@@ -154,4 +158,105 @@ export async function getPokemonList(
   offset = 0,
 ): Promise<PokemonListItem[]> {
   return fetchPokemonPage(offset, limit);
+}
+
+export async function getGenerationById(
+  id: number,
+): Promise<PokemonGeneration | null> {
+  if (!Number.isInteger(id) || id < 1 || id > 9) {
+    return null;
+  }
+
+  const response = await fetch(`${API_BASE}/generation/${id}`, {
+    cache: "force-cache",
+    next: { revalidate: 3600 },
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Pokémon generation ${id}`);
+  }
+
+  return (await response.json()) as PokemonGeneration;
+}
+
+export async function getPokemonByGeneration(
+  generation: PokemonGeneration,
+): Promise<PokemonListItem[]> {
+  const details = await Promise.all(
+    generation.pokemon_species.map((species) => {
+      const speciesId = Number(species.url.split("/").filter(Boolean).at(-1));
+      if (!Number.isInteger(speciesId) || speciesId < 1) {
+        throw new Error(`Invalid Pokémon species URL: ${species.url}`);
+      }
+
+      return getPokemonByName(String(speciesId));
+    }),
+  );
+
+  return details.map((pokemon, index) => {
+    if (!pokemon) {
+      const species = generation.pokemon_species[index];
+      throw new Error(
+        `Failed to fetch Pokémon ${species?.name ?? "species"} in generation ${generation.id}`,
+      );
+    }
+
+    return {
+      id: pokemon.id,
+      name: pokemon.name,
+      image: pokemon.image,
+      types: pokemon.types,
+      baseStatTotal: pokemon.stats.reduce(
+        (total, stat) => total + stat.value,
+        0,
+      ),
+    };
+  });
+}
+
+export async function getPokemonPageAcrossGenerations(
+  offset = 0,
+  limit = 24,
+): Promise<{ pokemons: PokemonListItem[]; totalCount: number }> {
+  const generationIds = Array.from({ length: 9 }, (_, index) => index + 1);
+  const generations = await Promise.all(
+    generationIds.map((id) => getGenerationById(id)),
+  );
+  const availableGenerations = generations.filter(
+    (generation): generation is PokemonGeneration => generation !== null,
+  );
+  if (availableGenerations.length !== generationIds.length) {
+    throw new Error("Failed to load all Pokémon generations");
+  }
+  const species = availableGenerations
+    .flatMap((generation) => generation.pokemon_species)
+    .map((entry) => ({
+      id: Number(entry.url.split("/").filter(Boolean).at(-1)),
+    }))
+    .filter((entry) => Number.isInteger(entry.id) && entry.id > 0)
+    .sort((a, b) => a.id - b.id);
+
+  const page = species.slice(offset, offset + limit);
+  const details = await Promise.all(
+    page.map(async ({ id }) => {
+      const pokemon = await getPokemonByName(String(id));
+      if (!pokemon) return null;
+      return {
+        id: pokemon.id,
+        name: pokemon.name,
+        image: pokemon.image,
+        types: pokemon.types,
+        baseStatTotal: pokemon.stats.reduce((total, stat) => total + stat.value, 0),
+      } satisfies PokemonListItem;
+    }),
+  );
+
+  return {
+    pokemons: details.filter((pokemon): pokemon is PokemonListItem => pokemon !== null),
+    totalCount: species.length,
+  };
 }

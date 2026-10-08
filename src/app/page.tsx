@@ -1,11 +1,17 @@
 import { PokemonPageClient } from "@/components/PokemonPageClient";
-import { getPokemonList, getPokemonTypes } from "@/lib/pokeapi";
+import { getPokemonPageAcrossGenerations, getPokemonTypes } from "@/lib/pokeapi";
 
 export default async function HomePage() {
-  const [pokemons, types] = await Promise.all([
-    getPokemonList(151),
+  const [{ pokemons, totalCount }, types] = await Promise.all([
+    getPokemonPageAcrossGenerations(0, 24),
     getPokemonTypes(),
   ]);
 
-  return <PokemonPageClient initialPokemons={pokemons} types={types} />;
+  return (
+    <PokemonPageClient
+      initialPokemons={pokemons}
+      totalCount={totalCount}
+      types={types}
+    />
+  );
 }

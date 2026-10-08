@@ -1,21 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
-import { PokemonGrid, PokemonGridSkeleton } from "@/components/PokemonGrid";
+import { PokemonGrid } from "@/components/PokemonGrid";
 import { PokeBotModal } from "@/components/PokeBotModal";
 import { SearchBar } from "@/components/SearchBar";
 import { SortControl } from "@/components/SortControl";
 import { TypeFilter } from "@/components/TypeFilter";
-import { getFavoriteNames, toggleFavoriteName } from "@/lib/favorites";
+import { toggleFavoriteName, useFavoriteNames } from "@/lib/favorites";
 import type { PokemonListItem } from "@/types/pokemon";
 
 export function PokemonPageClient({
   initialPokemons,
+  totalCount,
   types,
 }: {
   initialPokemons: PokemonListItem[];
+  totalCount: number;
   types: string[];
 }) {
   const router = useRouter();
@@ -25,21 +28,17 @@ export function PokemonPageClient({
   );
   const [activeType, setActiveType] = useState("all");
   const [sortBy, setSortBy] = useState("id");
-  const [visibleCount, setVisibleCount] = useState(24);
+  const [loadedPokemons, setLoadedPokemons] = useState(initialPokemons);
   const [botLimit, setBotLimit] = useState<number | null>(null);
-  const [favorites, setFavorites] = useState<string[]>(getFavoriteNames);
+  const favorites = useFavoriteNames();
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  const visiblePokemons = useMemo(
-    () => initialPokemons.slice(0, visibleCount),
-    [initialPokemons, visibleCount],
-  );
 
   const filteredPokemons = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    const filtered = visiblePokemons.filter((pokemon) => {
+    const filtered = loadedPokemons.filter((pokemon) => {
       const matchesSearch =
         query.length === 0 || pokemon.name.toLowerCase().includes(query);
       const matchesFavorites =
@@ -74,11 +73,11 @@ export function PokemonPageClient({
     favorites,
     search,
     sortBy,
-    visiblePokemons,
+    loadedPokemons,
   ]);
 
   const handleToggleFavorite = (name: string) => {
-    setFavorites((current) => toggleFavoriteName(name, current));
+    toggleFavoriteName(name, favorites);
   };
 
   const handlePokeBotAction = (action: string, payload: unknown) => {
@@ -87,9 +86,6 @@ export function PokemonPageClient({
     if (action === "filter_pokemon") {
       setBotLimit(typeof args.limit === "number" ? args.limit : null);
       setSortBy(typeof args.ranking === "string" ? args.ranking : "id");
-      if (args.limit) {
-        setVisibleCount(initialPokemons.length);
-      }
       if (typeof args.type === "string" && args.type) {
         setActiveType(args.type);
         setActiveTab("type");
@@ -110,30 +106,40 @@ export function PokemonPageClient({
 
     if (action === "open_favorites") {
       setActiveTab("favorites");
-      setFavorites(getFavoriteNames());
       return;
     }
 
     if (action === "navigate_to_pokemon" && args.name) {
       router.push(`/pokemon/${args.name}`);
     }
+
+    if (action === "navigate_to_generation" && args.generation) {
+      router.push(`/generations/${args.generation}`);
+    }
   };
 
-  const handleLoadMore = useCallback(() => {
-    if (visibleCount >= initialPokemons.length) return;
+  const handleLoadMore = useCallback(async () => {
+    if (isLoading || loadedPokemons.length >= totalCount) return;
     setIsLoading(true);
-    window.setTimeout(() => {
-      setVisibleCount((current) =>
-        Math.min(current + 24, initialPokemons.length),
-      );
+    setLoadError(false);
+    try {
+      const response = await fetch(`/api/pokemon?offset=${loadedPokemons.length}`);
+      if (!response.ok) throw new Error("Failed to load Pokémon page");
+      const page = (await response.json()) as {
+        pokemons: PokemonListItem[];
+        totalCount: number;
+      };
+      setLoadedPokemons((current) => [...current, ...page.pokemons]);
+    } catch {
+      setLoadError(true);
+    } finally {
       setIsLoading(false);
-    }, 350);
-  }, [initialPokemons.length, visibleCount]);
+    }
+  }, [isLoading, loadedPokemons.length, totalCount]);
 
   const handleToggleFavorites = () => {
     const nextTab = activeTab === "favorites" ? "all" : "favorites";
     setActiveTab(nextTab);
-    setFavorites(getFavoriteNames());
     if (nextTab !== "favorites") {
       setActiveType("all");
     }
@@ -143,7 +149,7 @@ export function PokemonPageClient({
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel || visibleCount >= initialPokemons.length) return;
+    if (!sentinel || loadedPokemons.length >= totalCount) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -158,9 +164,9 @@ export function PokemonPageClient({
     observer.observe(sentinel);
 
     return () => observer.disconnect();
-  }, [handleLoadMore, initialPokemons.length, isLoading, visibleCount]);
+  }, [handleLoadMore, isLoading, loadedPokemons.length, totalCount]);
 
-  const hasMore = visibleCount < initialPokemons.length;
+  const hasMore = loadedPokemons.length < totalCount;
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-4 py-8 text-white sm:px-6 lg:px-8 lg:py-10">
@@ -179,15 +185,22 @@ export function PokemonPageClient({
               </h1>
             </div>
 
-            <div className="inline-flex w-fit items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-cyan-100">
-              Gen I • 151
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex w-fit items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-cyan-100">
+                Gen I–IX • {totalCount}
+              </div>
+              <Link
+                href="/generations"
+                className="inline-flex w-fit items-center rounded-full border border-white/10 bg-slate-900/70 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-cyan-400/40 hover:text-cyan-100"
+              >
+                All generations
+              </Link>
             </div>
           </div>
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <SearchBar value={search} onChange={setSearch} />
             <div className="flex flex-wrap items-center gap-2">
-              <PokeBotModal onAction={handlePokeBotAction} />
               <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
                 <TypeFilter
                   types={types}
@@ -217,28 +230,40 @@ export function PokemonPageClient({
             )}
           </div>
 
-          {isLoading ? (
-            <PokemonGridSkeleton />
-          ) : (
-            <PokemonGrid
-              pokemons={filteredPokemons}
-              favorites={favorites}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          )}
+          <PokemonGrid
+            pokemons={filteredPokemons}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+          />
 
           {hasMore && (
             <div
               ref={sentinelRef}
-              className="flex min-h-12 justify-center py-4"
+              className="flex min-h-12 flex-col items-center justify-center gap-2 py-4"
             >
-              <div className="h-1.5 w-24 rounded-full bg-slate-300/80 dark:bg-slate-700" />
+              {isLoading ? (
+                <div className="h-1.5 w-24 animate-pulse rounded-full bg-slate-300/80 dark:bg-slate-700" />
+              ) : loadError ? (
+                <button
+                  type="button"
+                  onClick={() => void handleLoadMore()}
+                  className="text-sm text-cyan-200 hover:text-white"
+                >
+                  Couldn&apos;t load more Pokémon. Try again.
+                </button>
+              ) : (
+                <div className="h-1.5 w-24 rounded-full bg-slate-300/80 dark:bg-slate-700" />
+              )}
             </div>
           )}
 
-          {isLoading && <PokemonGridSkeleton />}
         </section>
       </div>
+
+      <PokeBotModal
+        onAction={handlePokeBotAction}
+        favoriteNames={favorites}
+      />
 
       <BottomNav
         activeTab={activeTab}

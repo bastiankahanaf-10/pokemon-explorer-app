@@ -46,3 +46,18 @@ export interface PokemonListItem {
   types: string[];
   baseStatTotal: number;
 }
+
+export interface PokemonSpeciesReference {
+  name: string;
+  url: string;
+}
+
+export interface PokemonGeneration {
+  id: number;
+  name: string;
+  main_region: {
+    name: string;
+    url: string;
+  };
+  pokemon_species: PokemonSpeciesReference[];
+}
