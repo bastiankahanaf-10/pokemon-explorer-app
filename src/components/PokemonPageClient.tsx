@@ -76,8 +76,28 @@ export function PokemonPageClient({
     loadedPokemons,
   ]);
 
-  const handleToggleFavorite = (name: string) => {
-    toggleFavoriteName(name, favorites);
+  const handleToggleFavorite = useCallback(
+    (name: string) => {
+      toggleFavoriteName(name, favorites);
+    },
+    [favorites],
+  );
+
+  const handleHome = () => {
+    setActiveTab("all");
+    setActiveType("all");
+    setSearch("");
+    setSortBy("id");
+    setBotLimit(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleOpenFavorites = () => {
+    setActiveTab("favorites");
+    setActiveType("all");
+    setSearch("");
+    setSortBy("id");
+    setBotLimit(null);
   };
 
   const handlePokeBotAction = (action: string, payload: unknown) => {
@@ -86,26 +106,16 @@ export function PokemonPageClient({
     if (action === "filter_pokemon") {
       setBotLimit(typeof args.limit === "number" ? args.limit : null);
       setSortBy(typeof args.ranking === "string" ? args.ranking : "id");
-      if (typeof args.type === "string" && args.type) {
-        setActiveType(args.type);
-        setActiveTab("type");
-      }
-
-      if (typeof args.search === "string" && args.search) {
-        setSearch(args.search);
-        setActiveTab("all");
-      }
-
-      if (!args.type && !args.search) {
-        setActiveType("all");
-        setActiveTab("all");
-      }
+      setSearch(typeof args.search === "string" ? args.search : "");
+      setActiveType(typeof args.type === "string" ? args.type : "all");
+      setActiveTab(typeof args.type === "string" ? "type" : "all");
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       return;
     }
 
     if (action === "open_favorites") {
-      setActiveTab("favorites");
+      handleOpenFavorites();
       return;
     }
 
@@ -138,13 +148,12 @@ export function PokemonPageClient({
   }, [isLoading, loadedPokemons.length, totalCount]);
 
   const handleToggleFavorites = () => {
-    const nextTab = activeTab === "favorites" ? "all" : "favorites";
-    setActiveTab(nextTab);
-    if (nextTab !== "favorites") {
-      setActiveType("all");
+    if (activeTab === "favorites") {
+      handleHome();
+      return;
     }
+    handleOpenFavorites();
     setBotLimit(null);
-    setSortBy("id");
   };
 
   useEffect(() => {
@@ -169,7 +178,7 @@ export function PokemonPageClient({
   const hasMore = loadedPokemons.length < totalCount;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-4 py-8 text-white sm:px-6 lg:px-8 lg:py-10">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_40%),linear-gradient(180deg,#020817_0%,#0f172a_100%)] px-4 py-8 pb-36 text-white sm:px-6 md:pb-8 lg:px-8 lg:py-10">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 rounded-[2rem] border border-white/10 bg-slate-950/70 p-5 shadow-[0_22px_70px_rgba(15,23,42,0.5)] backdrop-blur-xl sm:p-6">
           <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -204,10 +213,14 @@ export function PokemonPageClient({
               <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
                 <TypeFilter
                   types={types}
-                  activeType={activeType}
+                  activeType={activeTab === "favorites" ? "favorites" : activeType}
                   onChange={(nextType) => {
+                    if (nextType === "favorites") {
+                      handleOpenFavorites();
+                      return;
+                    }
                     setActiveType(nextType);
-                    setActiveTab("type");
+                    setActiveTab(nextType === "all" ? "all" : "type");
                   }}
                 />
                 <SortControl value={sortBy} onChange={setSortBy} />
@@ -268,10 +281,16 @@ export function PokemonPageClient({
       <BottomNav
         activeTab={activeTab}
         activeType={activeType}
-        onChangeTab={setActiveTab}
+        onChangeTab={(nextTab) => {
+          if (nextTab === "all") {
+            handleHome();
+          } else {
+            setActiveTab(nextTab);
+          }
+        }}
         onChangeType={(nextType) => {
           setActiveType(nextType);
-          setActiveTab("type");
+          setActiveTab(nextType === "all" ? "all" : "type");
         }}
         onToggleFavorites={handleToggleFavorites}
         types={types}

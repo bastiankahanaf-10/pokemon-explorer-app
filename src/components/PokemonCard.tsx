@@ -4,39 +4,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
-import { memo, useSyncExternalStore } from "react";
+import { memo } from "react";
 import { Badge } from "@/components/ui/Badge";
 import type { PokemonListItem } from "@/types/pokemon";
-
-function subscribeToHoverChanges(callback: () => void) {
-  const mediaQuery = window.matchMedia("(hover: hover)");
-  mediaQuery.addEventListener("change", callback);
-  return () => mediaQuery.removeEventListener("change", callback);
-}
-
-function getCanHoverSnapshot() {
-  return window.matchMedia("(hover: hover)").matches;
-}
-
-function getServerCanHoverSnapshot() {
-  return false;
-}
 
 function PokemonCardComponent({
   pokemon,
   isFavorite,
   onToggleFavorite,
+  canHover,
+  loading = "lazy",
 }: {
   pokemon: PokemonListItem;
   isFavorite: boolean;
   onToggleFavorite: (name: string) => void;
+  canHover: boolean;
+  loading?: "eager" | "lazy";
 }) {
-  const canHover = useSyncExternalStore(
-    subscribeToHoverChanges,
-    getCanHoverSnapshot,
-    getServerCanHoverSnapshot,
-  );
-
   return (
     <motion.div
       whileHover={canHover ? { y: -8, scale: 1.015 } : undefined}
@@ -81,7 +65,7 @@ function PokemonCardComponent({
                 alt={pokemon.name}
                 width={112}
                 height={112}
-                unoptimized
+                loading={loading}
                 className="h-28 w-28 object-contain drop-shadow-[0_14px_22px_rgba(34,211,238,0.28)]"
               />
             </div>

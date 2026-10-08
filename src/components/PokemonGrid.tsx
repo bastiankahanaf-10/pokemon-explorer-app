@@ -1,11 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { memo, useSyncExternalStore } from "react";
 import { PokemonCard } from "@/components/PokemonCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { PokemonListItem } from "@/types/pokemon";
 
-export function PokemonGrid({
+function subscribeToHoverChanges(callback: () => void) {
+  const mediaQuery = window.matchMedia("(hover: hover)");
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getCanHoverSnapshot() {
+  return window.matchMedia("(hover: hover)").matches;
+}
+
+function getServerCanHoverSnapshot() {
+  return false;
+}
+
+function PokemonGridComponent({
   pokemons,
   favorites,
   onToggleFavorite,
@@ -14,6 +29,12 @@ export function PokemonGrid({
   favorites: string[];
   onToggleFavorite: (name: string) => void;
 }) {
+  const canHover = useSyncExternalStore(
+    subscribeToHoverChanges,
+    getCanHoverSnapshot,
+    getServerCanHoverSnapshot,
+  );
+
   if (pokemons.length === 0) {
     return (
       <div className="rounded-3xl border border-dashed border-white/10 bg-slate-900/40 p-12 text-center text-slate-300">
@@ -23,9 +44,9 @@ export function PokemonGrid({
   }
 
   return (
-    <div className="grid-scroll-shell overscroll-contain touch-pan-y">
+    <div className="grid-scroll-shell touch-pan-y">
       <div className="pokemon-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {pokemons.map((pokemon) => (
+        {pokemons.map((pokemon, index) => (
           <motion.div
             key={pokemon.id}
             initial={{ opacity: 0, scale: 0.92, y: 12 }}
@@ -37,6 +58,8 @@ export function PokemonGrid({
               pokemon={pokemon}
               isFavorite={favorites.includes(pokemon.name)}
               onToggleFavorite={onToggleFavorite}
+              canHover={canHover}
+              loading={index < 4 ? "eager" : "lazy"}
             />
           </motion.div>
         ))}
@@ -44,6 +67,8 @@ export function PokemonGrid({
     </div>
   );
 }
+
+export const PokemonGrid = memo(PokemonGridComponent);
 
 export function PokemonGridSkeleton() {
   return (

@@ -29,19 +29,17 @@ export function BottomNav({
 
   const handleSelectType = (value: string) => {
     onChangeType(value);
-    onChangeTab("type");
+    onChangeTab(value === "all" ? "all" : "type");
     setIsTypeSheetOpen(false);
   };
 
   const handleAction = (value: "all" | "filter" | "favorites") => {
     if (value === "favorites") {
-      onChangeTab("favorites");
       onToggleFavorites();
       return;
     }
 
     if (value === "filter") {
-      onChangeTab("type");
       setIsTypeSheetOpen(true);
       return;
     }
@@ -54,7 +52,10 @@ export function BottomNav({
   return (
     <>
       <nav
-        style={{ willChange: "transform" }}
+        style={{
+          willChange: "transform",
+          bottom: "max(env(safe-area-inset-bottom), 0.75rem)",
+        }}
         className="fixed inset-x-0 bottom-3 z-50 mx-auto flex w-[calc(100%-1.5rem)] max-w-md items-center justify-around rounded-full border border-white/10 bg-slate-900/80 p-2 shadow-[0_16px_44px_rgba(2,6,23,0.6)] backdrop-blur-md max-md:backdrop-blur-none max-md:bg-slate-950/95 md:hidden"
       >
         {items.map(({ label, value, icon: Icon }) => {
@@ -92,7 +93,7 @@ export function BottomNav({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 48, opacity: 0 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
-              className="absolute inset-x-0 bottom-0 rounded-t-[1.75rem] border-t border-white/10 bg-slate-950/95 p-4 shadow-[0_-20px_60px_rgba(15,23,42,0.8)]"
+              className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-[1.75rem] border-t border-white/10 bg-slate-950/95 p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-[0_-20px_60px_rgba(15,23,42,0.8)]"
             >
               <div className="mb-4 flex items-center justify-between">
                 <div>

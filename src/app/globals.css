@@ -42,22 +42,8 @@ body {
 }
 
 .grid-scroll-shell {
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(34, 211, 238, 0.65) transparent;
-}
-
-.grid-scroll-shell::-webkit-scrollbar {
-  width: 8px;
-}
-
-.grid-scroll-shell::-webkit-scrollbar-thumb {
-  background: rgba(34, 211, 238, 0.6);
-  border-radius: 999px;
-}
-
-.grid-scroll-shell::-webkit-scrollbar-track {
-  background: transparent;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .pokemon-grid {
@@ -78,7 +64,7 @@ a {
   }
 }
 
-@media (hover: none) {
+@media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;

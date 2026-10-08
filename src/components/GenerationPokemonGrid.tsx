@@ -2,6 +2,7 @@
 
 import { PokemonGrid } from "@/components/PokemonGrid";
 import { toggleFavoriteName, useFavoriteNames } from "@/lib/favorites";
+import { useCallback } from "react";
 import type { PokemonListItem } from "@/types/pokemon";
 
 export function GenerationPokemonGrid({
@@ -11,9 +12,12 @@ export function GenerationPokemonGrid({
 }) {
   const favorites = useFavoriteNames();
 
-  const handleToggleFavorite = (name: string) => {
-    toggleFavoriteName(name, favorites);
-  };
+  const handleToggleFavorite = useCallback(
+    (name: string) => {
+      toggleFavoriteName(name, favorites);
+    },
+    [favorites],
+  );
 
   return (
     <PokemonGrid

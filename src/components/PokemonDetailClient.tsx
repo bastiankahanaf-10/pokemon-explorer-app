@@ -49,7 +49,7 @@ export function PokemonDetailClient({
             alt={name}
             width={288}
             height={288}
-            unoptimized
+            preload
             className="h-52 w-52 object-contain drop-shadow-[0_20px_40px_rgba(34,211,238,0.35)] sm:h-64 sm:w-64 md:h-72 md:w-72"
           />
         </div>
